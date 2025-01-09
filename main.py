@@ -2,7 +2,7 @@ import random
 import streamlit as st
 from word_list import WORD_LIST
 from model import load_kobert, load_fasttext, get_kobert_embedding, get_fasttext_embedding
-from util import calculate_similarity
+from util import calculate_similarity, calculate_rank
 
 def main():
     st.title('단어 맞추기')
@@ -49,8 +49,19 @@ def main():
 
             similarity = calculate_similarity(target_embedding, input_embedding)
 
+            # 순위 계산
+            rank, similarities = calculate_rank(
+                input_embedding,
+                WORD_LIST,
+                model_option,
+                tokenizer=tokenizer if model_option == "KoBERT" else None,
+                kobert_model=model if model_option == "KoBERT" else None,
+                fasttext_model=fasttext_model if model_option == "FastText" else None,
+            )
+
             # 유사도 계산 및 출력
             st.write(f"유사도 : {similarity:.2f}")
+            st.write(f"입력한 단어의 유사도 순위: **{rank}/{len(WORD_LIST)}**")
 
             # 정답 여부 확인
             if input_word == target_word:
@@ -60,13 +71,13 @@ def main():
                 st.warning("틀렸습니다! 다시 시도해보세요.")
 
             # 답변과 유사도를 기록
-            st.session_state["answers"].append({"답변": input_word, "유사도": round(similarity,3)})
+            st.session_state["answers"].append({"답변": input_word, "유사도": round(similarity,3), "순위": rank})
         except Exception as e:
             st.error(f"오류 발생: {str(e)}")
 
     # 유사도 순으로 답변 기록 테이블 출력
     if st.session_state["answers"]:
-        st.subheader("입력한 답변과 유사도 기록")
+        st.subheader("LOG")
 
         # 유사도에 따라 내림차순 정렬
         sorted_answers = sorted(st.session_state["answers"], key=lambda x: x["유사도"], reverse=True)

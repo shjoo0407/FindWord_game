@@ -39,3 +39,4 @@ def get_fasttext_embedding(word, fasttext_model):
     norm_word_embedding = word_embedding / np.linalg.norm(word_embedding)
 
     return norm_word_embedding
+
